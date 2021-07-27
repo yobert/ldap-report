@@ -23,3 +23,12 @@ a > .name {
 .count {
 	opacity: 0.5;
 }
+.search {
+	margin: 1rem;
+}
+.search > input {
+	padding: 0.25rem;
+}
+.node_hide {
+	display: none;
+}

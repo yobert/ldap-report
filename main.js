@@ -104,6 +104,8 @@ function main() {
 
 	let body = document.documentElement
 
+	body.appendChild(searchbox(root))
+
 	body.appendChild(build(root))
 
 	//let pre = document.createElement("pre")
@@ -116,6 +118,7 @@ function sortdata(node) {
 	for(let [ key, child ] of Object.entries(node.children)) {
 		keys.push(key)
 		sortdata(child)
+		child.up = node
 	}
 	keys.sort()
 	let children = []
@@ -128,9 +131,19 @@ function sortdata(node) {
 	} else {
 		node.open = true
 	}
+
+	if(node.name) {
+		node.namelower = node.name.toLowerCase()
+	} else {
+		node.namelower = ""
+	}
+	node.hide = false
 }
 
 function toggle(node) {
+	if(!node.up) // root node
+		return
+
 	let plus = document.getElementById("plus_"+node.id)
 	let children = document.getElementById("children_"+node.id)
 
@@ -159,6 +172,7 @@ function build(node) {
 
 	let div = document.createElement("div")
 	div.className = "node"
+	div.setAttribute("id", "node_"+node.id)
 
 	let toggler;
 	if(len > 0) {
@@ -226,4 +240,80 @@ function build(node) {
 
 	div.appendChild(children)
 	return div
+}
+
+function hide(node) {
+	if(node.hide)
+		return
+
+	if(!node.up) // root node
+		return
+
+	node.hide = true
+	let div = document.getElementById("node_"+node.id)
+	div.className = "node node_hide"
+}
+function show(node) {
+	if(!node.hide)
+		return
+
+	if(!node.up) // root node
+		return
+
+	node.hide = false
+	let div = document.getElementById("node_"+node.id)
+	div.className = "node"
+}
+
+function searchbox(root) {
+	let searchdiv = document.createElement("div")
+	searchdiv.className = "search"
+
+	let input = document.createElement("input")
+	input.setAttribute("autofocus", true)
+	input.setAttribute("placeholder", "Search...?")
+
+	let debounce = 0
+	input.addEventListener("input", function() {
+		let txt = input.value.toLowerCase()
+
+		debounce++
+		let this_debounce = debounce
+
+		setTimeout(function() {
+			if(debounce != this_debounce)
+				return
+
+			walk(root, hide)
+			walk(root, function(node) {
+				if(node.namelower.length > 0 && node.namelower.indexOf(txt) > -1) {
+					up(node, show)
+					walk(node, show)
+					up(node, function(node) {
+						if(!node.open)
+							toggle(node)
+					})
+				}
+			})
+		}, 500)
+		return false
+	}, false)
+
+	searchdiv.appendChild(input)
+	return searchdiv
+}
+
+function walk(node, fn) {
+	fn(node)
+
+	for(let i = 0; i < node.children.length; i++) {
+		walk(node.children[i], fn)
+	}
+}
+
+function up(node, fn) {
+	fn(node)
+
+	if(node.up)
+		up(node.up, fn)
 }
