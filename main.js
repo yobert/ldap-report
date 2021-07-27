@@ -138,9 +138,10 @@ function sortdata(node) {
 		node.namelower = ""
 	}
 	node.hide = false
+	node.open_search = false
 }
 
-function toggle(node) {
+function toggle(node, recurse) {
 	if(!node.up) // root node
 		return
 
@@ -151,10 +152,41 @@ function toggle(node) {
 		node.open = false
 		plus.innerHTML = "+ "
 		children.className = "children children_closed"
+
+		if(recurse) {
+			walk(node, function(node) {
+				if(node.children.length == 0)
+					return
+
+				if(node.open) {
+					node.open = false
+					let plus = document.getElementById("plus_"+node.id)
+					let children = document.getElementById("children_"+node.id)
+					plus.innerHTML = "+ "
+					children.className = "children children_closed"
+				}
+			})
+		}
+
 	} else {
 		node.open = true
 		plus.innerHTML = "- "
 		children.className = "children"
+
+		if(recurse) {
+			walk(node, function(node) {
+				if(node.children.length == 0)
+					return
+
+				if(!node.open) {
+					node.open = true
+					let plus = document.getElementById("plus_"+node.id)
+					let children = document.getElementById("children_"+node.id)
+					plus.innerHTML = "- "
+					children.className = "children"
+				}
+			})
+		}
 	}
 }
 
@@ -180,7 +212,8 @@ function build(node) {
 		toggler.setAttribute("href", "#")
 		toggler.addEventListener("click", function(e) {
 			e.preventDefault()
-			toggle(node)
+			toggle(node, e.shiftKey)
+			node.open_search = false
 			return false
 		}, false)
 	} else {
@@ -284,14 +317,27 @@ function searchbox(root) {
 			if(debounce != this_debounce)
 				return
 
+			if(txt == "") {
+				walk(root, show)
+				walk(root, function(node) {
+					if(node.open_search)
+						toggle(node)
+
+					node.open_search = false
+				})
+				return
+			}
+
 			walk(root, hide)
 			walk(root, function(node) {
 				if(node.namelower.length > 0 && node.namelower.indexOf(txt) > -1) {
 					up(node, show)
 					walk(node, show)
 					up(node, function(node) {
-						if(!node.open)
+						if(!node.open) {
+							node.open_search = true
 							toggle(node)
+						}
 					})
 				}
 			})
