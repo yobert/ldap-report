@@ -7,10 +7,11 @@ import (
 )
 
 type Group struct {
-	DN    string
-	Name  string
-	Key   string
-	Users []string
+	DN     string   `json:"dn"`
+	Parsed []Attr   `json:"parsed"`
+	Name   string   `json:"name"`
+	Key    string   `json:"key"`
+	Users  []string `json:"users"`
 }
 
 func (group *Group) String() string {
@@ -33,7 +34,7 @@ func groups(config *Config, conn *ldap.Conn) (map[string]*Group, error) {
 	r := map[string]*Group{}
 
 	for _, result := range results.Entries {
-		key, err := dnToKey(result.DN)
+		key, parsed, err := dnToKey(result.DN)
 		if err != nil {
 			return nil, err
 		}
@@ -43,8 +44,9 @@ func groups(config *Config, conn *ldap.Conn) (map[string]*Group, error) {
 		}
 
 		group := &Group{
-			DN:  result.DN,
-			Key: key,
+			DN:     result.DN,
+			Parsed: parsed,
+			Key:    key,
 		}
 
 		dn, err := ldap.ParseDN(result.DN)

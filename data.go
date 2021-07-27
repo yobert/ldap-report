@@ -11,27 +11,39 @@ import (
 )
 
 type Data struct {
-	Users  map[string]*User
-	Groups map[string]*Group
+	Users  map[string]*User  `json:"users"`
+	Groups map[string]*Group `json:"groups"`
 }
 
-func dnToKey(in string) (string, error) {
+type Attr struct {
+	Type  string `json:"type"`
+	Value string `json:"value"`
+}
+
+func dnToKey(in string) (string, []Attr, error) {
 	dn, err := ldap.ParseDN(in)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
 	key := ""
+	var attrs []Attr
 
 	for i := len(dn.RDNs) - 1; i >= 0; i-- {
 		rdn := dn.RDNs[i]
 		if len(rdn.Attributes) != 1 {
-			return "", fmt.Errorf("Not sure how to handle RDN with %d attributes from DN %#v", len(rdn.Attributes), in)
+			return "", nil, fmt.Errorf("Not sure how to handle RDN with %d attributes from DN %#v", len(rdn.Attributes), in)
 		}
 		attr := rdn.Attributes[0]
 
+		// We'll reverse the DN chunks just to make things easier in the JS
+		attrs = append(attrs, Attr{
+			Type:  attr.Type,
+			Value: attr.Value,
+		})
+
 		if strings.IndexByte(attr.Value, '/') != -1 {
-			return "", fmt.Errorf("Bad character in DN %#v", in)
+			return "", nil, fmt.Errorf("Bad character in DN %#v", in)
 		}
 
 		if len(key) > 0 {
@@ -41,7 +53,7 @@ func dnToKey(in string) (string, error) {
 		}
 	}
 
-	return key, nil
+	return key, attrs, nil
 }
 
 func loaddata(path string) (*Data, error) {

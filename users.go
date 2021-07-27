@@ -9,10 +9,11 @@ import (
 )
 
 type User struct {
-	DN     string
-	Name   string
-	Key    string
-	Groups []string
+	DN     string   `json:"dn"`
+	Parsed []Attr   `json:"parsed"`
+	Name   string   `json:"name"`
+	Key    string   `json:"key"`
+	Groups []string `json:"groups"`
 }
 
 func (user *User) String() string {
@@ -36,7 +37,7 @@ func users(config *Config, conn *ldap.Conn, groups map[string]*Group) (map[strin
 	bar := progress.NewBar(len(results.Entries), "users")
 
 	for _, result := range results.Entries {
-		key, err := dnToKey(result.DN)
+		key, parsed, err := dnToKey(result.DN)
 		if err != nil {
 			return nil, err
 		}
@@ -46,8 +47,9 @@ func users(config *Config, conn *ldap.Conn, groups map[string]*Group) (map[strin
 		}
 
 		user := &User{
-			DN:  result.DN,
-			Key: key,
+			DN:     result.DN,
+			Parsed: parsed,
+			Key:    key,
 		}
 
 		dn, err := ldap.ParseDN(result.DN)
@@ -80,7 +82,7 @@ func users(config *Config, conn *ldap.Conn, groups map[string]*Group) (map[strin
 				return nil, fmt.Errorf("%w handling DN: %s", err, result.DN)
 			}
 			for _, groupresult := range groupresults.Entries {
-				groupkey, err := dnToKey(groupresult.DN)
+				groupkey, _, err := dnToKey(groupresult.DN)
 				if err != nil {
 					return nil, err
 				}
