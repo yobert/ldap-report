@@ -17,19 +17,6 @@ func (group *Group) String() string {
 	return fmt.Sprintf("group %#v (key %#v, DN %#v)", group.Name, group.Key, group.DN)
 }
 
-type GroupList []*Group
-
-// for easy sorting
-func (groups GroupList) Len() int {
-	return len(groups)
-}
-func (groups GroupList) Swap(i, j int) {
-	groups[i], groups[j] = groups[j], groups[i]
-}
-func (groups GroupList) Less(i, j int) bool {
-	return groups[i].Key < groups[j].Key
-}
-
 func groups(config *Config, conn *ldap.Conn) (map[string]*Group, error) {
 	// list groups?
 	search := ldap.NewSearchRequest(config.GroupsDN,

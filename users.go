@@ -14,21 +14,9 @@ type User struct {
 	Key    string
 	Groups []string
 }
-type UserList []*User
 
 func (user *User) String() string {
 	return fmt.Sprintf("user %#v (key %#v, DN %#v)", user.Name, user.Key, user.DN)
-}
-
-// for easy sorting
-func (users UserList) Len() int {
-	return len(users)
-}
-func (users UserList) Swap(i, j int) {
-	users[i], users[j] = users[j], users[i]
-}
-func (users UserList) Less(i, j int) bool {
-	return users[i].Key < users[j].Key
 }
 
 func users(config *Config, conn *ldap.Conn, groups map[string]*Group) (map[string]*User, error) {
